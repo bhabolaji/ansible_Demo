@@ -1,14 +1,51 @@
 ---
-- name: set up webserver
-  hosts: all
-  become: true
-  tasks:
-    - name: ensure nginx is at the latest version
-      apt:
-        name: nginx
-        state: latest
-    - name: start nginx
-      service:
-        name: nginx
-        state: started
-        enabled: yes  # if you want to also enable nginx
+# jenkins
+
+- name: Create jenkins group
+  group:
+    name: jenkins
+    state: present
+
+- name: Create jenkins user
+  user:
+    name: jenkins
+    group: jenkins
+    state: present
+
+- name: Import jenkins gpg key
+  rpm_key:
+    state: present
+    key: http://pkg.jenkins.io/redhat-stable/jenkins.io.key
+    validate_certs: no
+
+- name: Download Jenkins repo
+  get_url:
+    url: http://get.jenkins.io/redhat-stable/jenkins-2.332.3-1.1.noarch.rpm
+    dest: /etc/yum.repos.d/
+
+- name: Install java
+  yum:
+    name: java-11-openjdk
+    state: present
+- name: Install Jenkins
+  package:
+    name: /etc/yum.repos.d/jenkins-2.332.3-1.1.noarch.rpm
+    state: latest
+
+- name: Jenkins Skip startUp for MI
+  lineinfile:
+    dest=/etc/sysconfig/jenkins
+    regexp='^JENKINS_JAVA_OPTIONS='
+    line='JENKINS_JAVA_OPTIONS="-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"'
+  register: result_skip_startup_wizard
+
+- name: Start and Enable Jenkins
+  systemd:
+    name: jenkins
+    state: started
+    enabled: true
+
+- name: Sleep for 30 seconds and continue with Jenkins buildout
+  wait_for: timeout=30
+
+
