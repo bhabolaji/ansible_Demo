@@ -45,7 +45,7 @@
     state: started
     enabled: true
 
-- name: Sleep for 30 seconds and continue with Jenkins buildout
-  wait_for: timeout=30
+- name: Sleep for 10 seconds and continue with Jenkins buildout
+  wait_for: timeout=10
 
 
